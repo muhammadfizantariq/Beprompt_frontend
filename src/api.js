@@ -47,6 +47,18 @@ export const runFullAnalysis = async (websiteUrl, email) => {
   });
 };
 
+// Create Stripe Checkout Session
+export const createCheckoutSession = async (formData) => {
+  return apiCall('/create-checkout-session', {
+    method: 'POST',
+    body: JSON.stringify({
+      ...formData,
+      amount: 29900, // $299 in cents
+      quantity: 1,
+    }),
+  });
+};
+
 // Check backend connection status
 export const checkBackendConnection = async () => {
   // Try multiple endpoints to test connection
@@ -237,6 +249,7 @@ const api = {
   // Node backend endpoints
   runQuickScan,
   runFullAnalysis,
+  createCheckoutSession,
   
   // Connection checking
   checkBackendConnection,
@@ -246,4 +259,4 @@ const api = {
   handleApiError,
 };
 
-export default api; 
+export default api;

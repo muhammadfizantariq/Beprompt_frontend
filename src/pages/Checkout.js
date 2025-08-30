@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import { createCheckoutSession } from '../api';
 import './Checkout.css';
 
 export default function Checkout() {
@@ -14,15 +14,8 @@ export default function Checkout() {
     setLoading(true);
     setError('');
     try {
-      const res = await axios.post('http://localhost:5000/create-checkout-session', {
-        ...form,
-        amount: 29900, // $299 in cents
-        quantity: 1,
-      });
-      
-      // Redirect to Stripe for payment processing
-      window.location.href = res.data.url;
-      
+      const res = await createCheckoutSession(form);
+      window.location.href = res.url;
     } catch (err) {
       setError('Payment initiation failed. Please try again.');
       setLoading(false);
