@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import { analyzeWebsite } from '../api';
 import './Success.css';
 
 export default function Success() {
@@ -24,8 +24,8 @@ export default function Success() {
         setStatus('success'); // Show success anyway since payment was completed
       }, 10000); // 10 second timeout
       
-      // Trigger the analysis report generation
-      axios.post('http://localhost:5000/analyze', { email, url })
+      // Use api.js for consistent backend URL
+      analyzeWebsite(email, url)
         .then((response) => {
           clearTimeout(timeout);
           console.log('Analyze response:', response);

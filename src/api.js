@@ -59,6 +59,14 @@ export const createCheckoutSession = async (formData) => {
   });
 };
 
+// Analyze Website - Node backend
+export const analyzeWebsite = async (email, url) => {
+  return apiCall('/analyze', {
+    method: 'POST',
+    body: JSON.stringify({ email, url }),
+  });
+};
+
 // Check backend connection status
 export const checkBackendConnection = async () => {
   // Try multiple endpoints to test connection
@@ -250,6 +258,7 @@ const api = {
   runQuickScan,
   runFullAnalysis,
   createCheckoutSession,
+  analyzeWebsite,
   
   // Connection checking
   checkBackendConnection,
