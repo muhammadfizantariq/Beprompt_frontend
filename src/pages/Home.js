@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { runQuickScan } from '../api';
+import { runQuickScan, precheckUrl } from '../api';
 import ScanResultsModal from '../components/ScanResultsModal';
 
 const MainScreen = () => {
@@ -40,11 +40,20 @@ const handleScanSubmit = async (e) => {
   setError('');
 
   try {
-    // REPLACE THE TRY BLOCK WITH THIS:
-    const response = await runQuickScan(scanData.websiteUrl, scanData.email);
+    // 1) Ask backend to normalize and verify reachability
+    const pre = await precheckUrl(scanData.websiteUrl);
+    if (!pre?.success) {
+      setError(pre?.error || 'We couldn’t validate that URL. Please check and try again.');
+      return;
+    }
+
+    const normalizedUrl = pre.finalUrl || pre.normalizedUrl;
+
+    // 2) Proceed with the scan using normalized URL
+    const response = await runQuickScan(normalizedUrl, scanData.email);
     if (response && response.success) {
       setScanResult({
-        url: response.data?.url,
+        url: response.data?.url || normalizedUrl,
         score: response.data?.finalScore,
         summary: response.data?.summary,
         recommendations: response.data?.recommendations || [],
@@ -97,15 +106,17 @@ const handleScanSubmit = async (e) => {
            {/* Scan form */}
            <div className="max-w-2xl mx-auto">
              <div className="bg-white/8 backdrop-blur-xl rounded-2xl p-6 sm:p-8 border border-white/20 shadow-2xl shadow-purple-500/10">
-               <form onSubmit={handleScanSubmit} className="space-y-4">
+               <form onSubmit={handleScanSubmit} noValidate className="space-y-4">
                  <div className="grid gap-4 sm:grid-cols-2">
                    <div className="relative">
-                     <input
-                       type="url"
+                    <input
+                      type="text"
                        name="websiteUrl"
-                       placeholder="Enter your website URL"
+                      placeholder="Enter your website"
                        value={scanData.websiteUrl}
                        onChange={handleInputChange}
+                      inputMode="url"
+                      autoComplete="url"
                        className="w-full px-4 py-4 bg-white/95 backdrop-blur-sm rounded-xl border border-white/30 text-gray-800 placeholder-gray-500 focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all duration-200 text-sm sm:text-base shadow-lg"
                        required
                      />

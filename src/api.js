@@ -36,6 +36,25 @@ export const runQuickScan = async (websiteUrl, email) => {
   });
 };
 
+// Normalize and precheck URL (backend determines reachability and returns normalizedUrl)
+export const precheckUrl = async (inputUrl) => {
+  const url = `${API_BASE_URL}/precheck-url`;
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: inputUrl }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      return { success: false, error: data?.error || `URL check failed (status ${res.status})` };
+    }
+    return data;
+  } catch (e) {
+    return { success: false, error: 'Network error while checking URL' };
+  }
+};
+
 // Full Analysis (queued, long-running) - Node backend
 export const runFullAnalysis = async (websiteUrl, email) => {
   return apiCall('/analyze', {
@@ -263,6 +282,7 @@ const api = {
   // Connection checking
   checkBackendConnection,
   pingBackend,
+  precheckUrl,
   
   // Error handling
   handleApiError,

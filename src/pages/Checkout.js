@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { createCheckoutSession } from '../api';
+import { createCheckoutSession, precheckUrl } from '../api';
 import './Checkout.css';
 
 export default function Checkout() {
@@ -14,7 +14,18 @@ export default function Checkout() {
     setLoading(true);
     setError('');
     try {
-      const res = await createCheckoutSession(form);
+      // 1) Normalize and verify the URL like Home page does
+      const pre = await precheckUrl(form.url);
+      if (!pre?.success) {
+        setError(pre?.error || 'We couldn’t validate that URL. Please check and try again.');
+        setLoading(false);
+        return;
+      }
+
+      const normalizedUrl = pre.finalUrl || pre.normalizedUrl || form.url;
+
+      // 2) Proceed to create checkout session with normalized URL
+      const res = await createCheckoutSession({ ...form, url: normalizedUrl });
       window.location.href = res.url;
     } catch (err) {
       setError('Payment initiation failed. Please try again.');
@@ -45,14 +56,16 @@ export default function Checkout() {
               </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="checkout-form">
+    <form onSubmit={handleSubmit} className="checkout-form">
               <div className="form-group">
                 <label>Website URL</label>
                 <input 
                   name="url" 
-                  placeholder="https://yourwebsite.com" 
+      placeholder="Enter your website URL" 
                   value={form.url}
                   onChange={handleChange} 
+      inputMode="url"
+      autoComplete="url"
                   required 
                 />
               </div>
