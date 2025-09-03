@@ -33,7 +33,7 @@ const Footer = () => {
               
               <div className="flex space-x-4">
                 <a 
-                  href="#" 
+                  href="https://twitter.com/" target="_blank" rel="noreferrer noopener"
                   className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-lg flex items-center justify-center text-gray-300 hover:text-white transition-all duration-300"
                 >
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -41,7 +41,7 @@ const Footer = () => {
                   </svg>
                 </a>
                 <a 
-                  href="#" 
+                  href="https://linkedin.com/" target="_blank" rel="noreferrer noopener"
                   className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-lg flex items-center justify-center text-gray-300 hover:text-white transition-all duration-300"
                 >
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -49,7 +49,7 @@ const Footer = () => {
                   </svg>
                 </a>
                 <a 
-                  href="#" 
+                  href="https://github.com/" target="_blank" rel="noreferrer noopener"
                   className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-lg flex items-center justify-center text-gray-300 hover:text-white transition-all duration-300"
                 >
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -85,10 +85,10 @@ const Footer = () => {
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-white">Resources</h3>
               <ul className="space-y-3">
-                <li><a href="#" className="text-gray-300 hover:text-white transition-colors duration-300">AI Visibility Guide</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-white transition-colors duration-300">Case Studies</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-white transition-colors duration-300">API Documentation</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-white transition-colors duration-300">Support</a></li>
+                <li><Link to="/blog" className="text-gray-300 hover:text-white transition-colors duration-300">AI Visibility Guide</Link></li>
+                <li><Link to="/blog" className="text-gray-300 hover:text-white transition-colors duration-300">Case Studies</Link></li>
+                <li><a href="https://docs.example.com" target="_blank" rel="noreferrer noopener" className="text-gray-300 hover:text-white transition-colors duration-300">API Documentation</a></li>
+                <li><Link to="/contact" className="text-gray-300 hover:text-white transition-colors duration-300">Support</Link></li>
               </ul>
             </div>
           </div>

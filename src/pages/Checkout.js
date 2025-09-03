@@ -33,9 +33,7 @@ export default function Checkout() {
     }
   };
 
-  const handleOkClick = () => {
-    window.location.href = '/';
-  };
+  // Removed unused handler to satisfy linter
 
   return (
     <div className="checkout">
