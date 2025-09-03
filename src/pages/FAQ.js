@@ -71,21 +71,28 @@ const FAQ = () => {
   return (
     <div className="faq-container">
       {/* Hero Section */}
-      <section className="hero-section">
-        <div className="hero-bg-effects">
-          <div className="bg-effect bg-effect-1"></div>
-          <div className="bg-effect bg-effect-2"></div>
-          <div className="bg-effect bg-effect-3"></div>
-        </div>
-        
-        <div className="hero-content">
-          <h1 className="hero-title">
-            <span className="gradient-text">Frequently Asked</span>
-            <span className="white-text">Questions</span>
-          </h1>
-          <p className="hero-subtitle">
-            Everything you need to know about AI visibility and our services.
-          </p>
+      <section className="relative py-32 pt-32 bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-800 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-tl from-pink-600/20 via-transparent to-cyan-600/10"></div>
+
+        {/* Animated background elements to match Contact hero */}
+        <div className="pointer-events-none absolute top-20 left-10 w-72 h-72 bg-gradient-to-br from-pink-500/15 to-purple-600/25 rounded-full blur-3xl animate-pulse"></div>
+        <div className="pointer-events-none absolute bottom-20 right-10 w-80 h-80 bg-gradient-to-br from-blue-400/20 to-cyan-600/15 rounded-full blur-3xl animate-pulse delay-700"></div>
+        <div className="pointer-events-none absolute top-1/2 left-1/3 w-60 h-60 bg-gradient-to-br from-indigo-400/12 to-purple-500/18 rounded-full blur-2xl animate-pulse delay-1400"></div>
+
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center pt-16">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
+              <span className="bg-gradient-to-r from-pink-300 via-purple-300 to-cyan-300 bg-clip-text text-transparent">
+                Frequently Asked
+              </span>
+              <span className="block text-white mt-2">Questions</span>
+
+            </h1>
+            
+            <p className="text-xl text-gray-200 max-w-4xl mx-auto leading-relaxed">
+              Everything you need to know about AI visibility and our services.
+            </p>
+          </div>
         </div>
       </section>
 
@@ -233,7 +240,7 @@ const FAQ = () => {
               Try Free AI Scan
             </button>
           </div>
-        </div>ß
+  </div>
       </section>
     </div>
   );
