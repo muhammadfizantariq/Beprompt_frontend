@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_BASE } from '../config/apiBase';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 
 export default function ResetPassword(){
@@ -18,8 +19,8 @@ export default function ResetPassword(){
     if(!password) { setError('Password required'); return; }
     setLoading(true);
     try {
-      const res = await fetch(`${process.env.REACT_APP_API_BASE || ''}/auth/reset-password`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ token, password })});
-      const data = await res.json();
+  const res = await fetch(`${API_BASE}/auth/reset-password`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ token, password })});
+  const text = await res.text(); let data; try { data = text? JSON.parse(text):{}; } catch { throw new Error(text.startsWith('<')? 'Unexpected HTML from server. Check API base URL.' : 'Invalid JSON response'); }
       if(!res.ok) throw new Error(data.error || 'Failed');
       setMessage('Password reset successful. Redirecting to login...');
       setTimeout(()=> navigate('/login'), 2000);

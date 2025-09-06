@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { API_BASE } from '../config/apiBase';
 
 export default function ResendVerification(){
   const [email,setEmail] = useState('');
@@ -11,8 +12,9 @@ export default function ResendVerification(){
     if(!email) { setError('Email required'); return; }
     setLoading(true);
     try {
-      const res = await fetch(`${process.env.REACT_APP_API_BASE || ''}/auth/resend-verification`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email })});
-      const data = await res.json();
+  const res = await fetch(`${API_BASE}/auth/resend-verification`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email })});
+  const text = await res.text();
+  let data; try { data = text? JSON.parse(text):{}; } catch { throw new Error(text.startsWith('<')? 'Unexpected HTML from server. Check API base URL.' : 'Invalid JSON response'); }
       if(!res.ok) throw new Error(data.error || 'Failed');
       setMessage('Verification email sent. Check your inbox.');
     } catch(err){ setError(err.message);} finally { setLoading(false);} 

@@ -1,6 +1,6 @@
 // Centralized API base URL resolution.
-// Prefer REACT_APP_API_BASE, fallback to REACT_APP_API_BASE_URL, then localhost:5000.
-const raw = process.env.REACT_APP_API_BASE || process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
+// Prefer REACT_APP_API_BASE_URL, fallback to REACT_APP_API_BASE, then localhost:5000.
+const raw = process.env.REACT_APP_API_BASE_URL || process.env.REACT_APP_API_BASE || 'http://localhost:5000';
 
 // Remove trailing slash for consistency
 export const API_BASE = raw.replace(/\/$/, '');

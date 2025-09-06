@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { API_BASE } from '../config/apiBase';
 
 export default function VerifyEmail(){
   const [params] = useSearchParams();
@@ -11,8 +12,11 @@ export default function VerifyEmail(){
     async function run(){
       if(!token){ setStatus('error'); setMessage('Missing token'); return; }
       try {
-        const res = await fetch(`${process.env.REACT_APP_API_BASE || ''}/auth/verify-email`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ token }) });
-        const data = await res.json();
+  const res = await fetch(`${API_BASE}/auth/verify-email`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ token }) });
+  const text = await res.text();
+  let data;
+  try { data = text? JSON.parse(text):{}; }
+  catch { throw new Error(text.startsWith('<')? 'Unexpected HTML from server. Check API base URL.' : 'Invalid JSON response'); }
         if(!res.ok) throw new Error(data.error || 'Verification failed');
         setStatus('success'); setMessage('Email verified. You can now login.');
       } catch(err){ setStatus('error'); setMessage(err.message); }
