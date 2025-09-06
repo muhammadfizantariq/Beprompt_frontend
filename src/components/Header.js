@@ -1,10 +1,34 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const [authed, setAuthed] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem('authToken');
+    setAuthed(!!token);
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        setIsAdmin(payload.role === 'admin');
+      } catch {
+        setIsAdmin(false);
+      }
+    } else {
+      setIsAdmin(false);
+    }
+  }, [location.pathname]);
+
+  function logout(){
+    localStorage.removeItem('authToken');
+    setAuthed(false);
+    navigate('/');
+  }
 
   useEffect(() => {
     const handleScroll = () => {
@@ -116,16 +140,40 @@ const Header = () => {
             >
               Blog
             </Link>
+            {isAdmin && (
+              <Link 
+                to="/admin/content" 
+                className={`nav-link transition-colors duration-300 font-medium hover:scale-105 transform transition-transform ${
+                  isActive('/admin/content') 
+                    ? (isScrolled ? 'text-purple-600' : 'text-white font-semibold') 
+                    : (isScrolled ? 'text-gray-700 hover:text-purple-600' : 'text-gray-200 hover:text-white')
+                }`}
+              >
+                Manage Content
+              </Link>
+            )}
           </nav>
 
           {/* Header CTA */}
-          <div className="hidden lg:flex">
-            <Link 
-              to="/contact" 
-              className="px-6 py-3 bg-gradient-to-r from-pink-600 via-purple-600 to-blue-600 hover:from-pink-700 hover:via-purple-700 hover:to-blue-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
-            >
-              Get Started
-            </Link>
+          <div className="hidden lg:flex items-center gap-4">
+            {authed ? (
+              <>
+                {!isAdmin && (
+                  <Link to="/account" className={`px-4 py-2 rounded-lg text-sm font-medium ${isScrolled ? 'bg-purple-600 text-white' : 'bg-white/20 text-white'} hover:opacity-90 transition`}>Account</Link>
+                )}
+                <button onClick={logout} className="px-4 py-2 rounded-lg text-sm font-medium bg-gradient-to-r from-pink-600 via-purple-600 to-blue-600 text-white shadow hover:shadow-lg transition">Logout</button>
+              </>
+            ) : (
+              <>
+                <Link to="/login" className={`text-sm font-medium ${isScrolled ? 'text-gray-700 hover:text-purple-600' : 'text-gray-200 hover:text-white'}`}>Login</Link>
+                <Link 
+                  to="/signup" 
+                  className="px-6 py-3 bg-gradient-to-r from-pink-600 via-purple-600 to-blue-600 hover:from-pink-700 hover:via-purple-700 hover:to-blue-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
+                >
+                  Get Started
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -219,14 +267,31 @@ const Header = () => {
             >
               Blog
             </Link>
-            <div className="pt-4">
+            {isAdmin && (
               <Link 
-                to="/contact" 
-                className="block w-full text-center px-6 py-3 bg-gradient-to-r from-pink-600 via-purple-600 to-blue-600 text-white font-semibold rounded-xl shadow-lg"
+                to="/admin/content" 
+                className={`block py-2 px-4 rounded-lg transition-colors duration-300 font-medium ${
+                  isActive('/admin/content') 
+                    ? 'bg-purple-100 text-purple-600' 
+                    : (isScrolled ? 'text-gray-700 hover:bg-gray-100' : 'text-gray-200 hover:bg-white/10')
+                }`}
                 onClick={closeMobileMenu}
               >
-                Get Started
+                Manage Content
               </Link>
+            )}
+            <div className="pt-4 space-y-3">
+        {authed ? (
+                <>
+          {!isAdmin && <Link to="/account" className="block w-full text-center px-6 py-3 bg-purple-600/80 text-white rounded-xl" onClick={closeMobileMenu}>Account</Link>}
+                  <button onClick={()=>{logout(); closeMobileMenu();}} className="block w-full text-center px-6 py-3 bg-gradient-to-r from-pink-600 via-purple-600 to-blue-600 text-white font-semibold rounded-xl">Logout</button>
+                </>
+              ) : (
+                <>
+                  <Link to="/login" className="block w-full text-center px-6 py-3 bg-white/10 text-white rounded-xl" onClick={closeMobileMenu}>Login</Link>
+                  <Link to="/signup" className="block w-full text-center px-6 py-3 bg-gradient-to-r from-pink-600 via-purple-600 to-blue-600 text-white font-semibold rounded-xl" onClick={closeMobileMenu}>Get Started</Link>
+                </>
+              )}
             </div>
           </div>
         </nav>

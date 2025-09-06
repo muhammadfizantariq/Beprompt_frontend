@@ -100,11 +100,15 @@ const Services = () => {
   ];
 
   const handleBuyReport = () => {
-    if (isRedirecting) return; // prevent double clicks
+    if (isRedirecting) return;
+    const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
     setIsRedirecting(true);
-    // Small timeout allows spinner to render before navigation
     setTimeout(() => {
-      window.location.href = '/checkout';
+      if (token) {
+        window.location.href = '/checkout';
+      } else {
+        window.location.href = '/login';
+      }
     }, 50);
   };
 

@@ -9,7 +9,10 @@ export default function Success() {
   useEffect(() => {
     // Get email and url from query params
     const params = new URLSearchParams(window.location.search);
-    const email = params.get('email');
+    let email = params.get('email');
+    if(!email){
+      try{ const token=localStorage.getItem('authToken'); if(token){ const p=JSON.parse(atob(token.split('.')[1])); email=p.email||p.userEmail||email; }}catch{}
+    }
     const url = params.get('url');
     
     console.log('Success page params:', { email, url });

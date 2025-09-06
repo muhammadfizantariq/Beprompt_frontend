@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { API_BASE } from '../config/apiBase';
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -55,20 +56,28 @@ const Contact = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if(isSubmitting) return;
     setIsSubmitting(true);
-    
-    setTimeout(() => {
-      setIsSubmitting(false);
-      setSubmitStatus('success');
-      setFormData({
-        name: '',
-        business: '',
-        email: '',
-        message: ''
+    setSubmitStatus(null);
+    try {
+      const res = await fetch(`${API_BASE}/contact`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
       });
-      
-      setTimeout(() => setSubmitStatus(null), 5000);
-    }, 2000);
+      const data = await res.json().catch(()=>({ success:false, error:'Invalid server response'}));
+      if(!res.ok || !data.success){
+        setSubmitStatus({ type:'error', message: data.error || `Failed to send (status ${res.status})` });
+      } else {
+        setSubmitStatus({ type:'success', message: 'Message received! Our team will respond shortly.' });
+        setFormData({ name:'', business:'', email:'', message:'' });
+      }
+    } catch(err){
+      setSubmitStatus({ type:'error', message: err.message || 'Network error sending message' });
+    } finally {
+      setIsSubmitting(false);
+      setTimeout(()=> setSubmitStatus(null), 7000);
+    }
   };
 
   return (
@@ -215,17 +224,22 @@ const Contact = () => {
               </button>
             </div>
             
-            {submitStatus === 'success' && (
+            {submitStatus && submitStatus.type==='success' && (
               <div className="mt-8 p-6 bg-green-50 border border-green-200 rounded-2xl">
                 <div className="flex items-center mb-3">
-                  <svg className="w-6 h-6 text-green-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
+                  <svg className="w-6 h-6 text-green-600 mr-2" viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
                   <h3 className="text-lg font-semibold text-green-800">Message Sent Successfully!</h3>
                 </div>
-                <p className="text-green-700">
-                  We'll get back to you within 2-4 hours during business hours with personalized recommendations for your AI visibility needs.
-                </p>
+                <p className="text-green-700">{submitStatus.message}</p>
+              </div>
+            )}
+            {submitStatus && submitStatus.type==='error' && (
+              <div className="mt-8 p-6 bg-red-50 border border-red-200 rounded-2xl">
+                <div className="flex items-center mb-3">
+                  <svg className="w-6 h-6 text-red-600 mr-2" viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                  <h3 className="text-lg font-semibold text-red-800">Failed to Send</h3>
+                </div>
+                <p className="text-red-700">{submitStatus.message}</p>
               </div>
             )}
           </div>

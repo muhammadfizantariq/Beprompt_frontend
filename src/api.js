@@ -3,9 +3,11 @@ const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 // Helper function for API calls
 const apiCall = async (endpoint, options = {}) => {
   const url = `${API_BASE_URL}${endpoint}`;
+  const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
   const config = {
     headers: {
       'Content-Type': 'application/json', 
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options.headers,
     },
     ...options,

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { API_BASE } from '../config/apiBase';
 import './Blog.css';
 
 const Blog = () => {
@@ -13,96 +14,20 @@ const Blog = () => {
     { id: 'strategies', name: 'Strategies & Tips' }
   ];
 
-  const blogPosts = [
-    {
-      id: 1,
-      title: "The AI-First Future: Why Traditional SEO Alone Won't Cut It Anymore",
-      excerpt: "As AI assistants become the primary discovery mechanism for millions of users, businesses face a fundamental shift in how they need to approach digital visibility. This isn't just about ranking on Google anymore—it's about being the trusted source that AI recommends when users ask questions.",
-      category: "ai-visibility",
-      author: "Sarah Johnson",
-      date: "2024-01-15",
-      readTime: "8 min read",
-      featured: true,
-      slug: "ai-first-future-traditional-seo-limitations"
-    },
-    {
-      id: 2,
-      title: "How We Helped TechStart Achieve 300% More AI Recommendations: A Deep Dive",
-      excerpt: "When TechStart approached us, they were invisible to AI assistants despite having strong Google rankings. Through systematic optimization of their content structure, technical implementation, and thought leadership positioning, we helped them become the go-to recommendation.",
-      category: "case-studies",
-      author: "Michael Chen",
-      date: "2024-01-10",
-      readTime: "12 min read",
-      featured: false,
-      slug: "techstart-300-percent-ai-recommendations-case-study"
-    },
-    {
-      id: 3,
-      title: "The Hidden Factors That Make AI Trust Your Content (And Why Most Businesses Miss Them)",
-      excerpt: "AI assistants don't just look for keywords—they evaluate content quality, authority signals, and user intent in ways that differ fundamentally from search engines. We've analyzed thousands of AI responses to identify the specific factors.",
-      category: "strategies",
-      author: "Lisa Rodriguez",
-      date: "2024-01-08",
-      readTime: "10 min read",
-      featured: false,
-      slug: "hidden-factors-ai-trust-content"
-    },
-    {
-      id: 4,
-      title: "ChatGPT vs. Google: The New Discovery Paradigm and What It Means for Your Business",
-      excerpt: "The way people discover businesses is fundamentally changing. Instead of scrolling through search results, users are getting direct, conversational answers from AI assistants. This shift creates both challenges and opportunities.",
-      category: "industry-insights",
-      author: "David Kim",
-      date: "2024-01-05",
-      readTime: "9 min read",
-      featured: false,
-      slug: "chatgpt-vs-google-discovery-paradigm"
-    },
-    {
-      id: 5,
-      title: "AI Visibility vs. SEO: Understanding the Fundamental Differences",
-      excerpt: "While SEO and AI visibility share some common elements, they require fundamentally different approaches. AI assistants evaluate content differently, prioritize different signals, and serve users in ways that traditional search engines don't.",
-      category: "ai-visibility",
-      author: "Sarah Johnson",
-      date: "2024-01-03",
-      readTime: "11 min read",
-      featured: false,
-      slug: "ai-visibility-vs-seo-fundamental-differences"
-    },
-    {
-      id: 6,
-      title: "The Rise of AI-First Marketing: What Early Adopters Are Learning",
-      excerpt: "Forward-thinking businesses are already adapting their marketing strategies for the AI era. From content optimization to brand positioning, these early adopters are discovering what works—and what doesn't—in the new AI-driven landscape.",
-      category: "industry-insights",
-      author: "Michael Chen",
-      date: "2023-12-28",
-      readTime: "7 min read",
-      featured: false,
-      slug: "rise-ai-first-marketing-early-adopters"
-    },
-    {
-      id: 7,
-      title: "Content Optimization for AI Assistants: A Technical Deep Dive",
-      excerpt: "Optimizing content for AI assistants requires understanding how these systems process and evaluate information. From semantic structure to authority signals, we break down the technical aspects of AI content optimization.",
-      category: "strategies",
-      author: "Lisa Rodriguez",
-      date: "2023-12-25",
-      readTime: "13 min read",
-      featured: false,
-      slug: "content-optimization-ai-assistants-technical"
-    },
-    {
-      id: 8,
-      title: "Case Study: How a Local Restaurant Increased Orders by 150% Through AI Visibility",
-      excerpt: "When a local restaurant realized they weren't being recommended by AI assistants, they took action. Through strategic content optimization and local AI visibility tactics, they achieved a 150% increase in online orders.",
-      category: "case-studies",
-      author: "David Kim",
-      date: "2023-12-20",
-      readTime: "9 min read",
-      featured: false,
-      slug: "local-restaurant-150-percent-orders-ai-visibility"
-    }
-  ];
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    (async ()=>{
+      try {
+        const res = await fetch(`${API_BASE}/content/blogs`);
+        const data = await res.json();
+        if(!data.success) throw new Error(data.error||'Failed to load posts');
+        setPosts(data.posts);
+      } catch(e){ setError(e.message); } finally { setLoading(false); }
+    })();
+  }, []);
 
   const popularTopics = [
     { name: "AI Visibility Fundamentals", count: 18, gradient: "purple-blue" },
@@ -113,10 +38,10 @@ const Blog = () => {
   ];
 
   const filteredPosts = selectedCategory === 'all' 
-    ? blogPosts 
-    : blogPosts.filter(post => post.category === selectedCategory);
+    ? posts 
+    : posts.filter(post => post.category === selectedCategory);
 
-  const featuredPost = blogPosts.find(post => post.featured);
+  const featuredPost = posts.find(post => post.featured);
   const regularPosts = filteredPosts.filter(post => !post.featured);
 
   const handleSubscribe = (e) => {
@@ -165,7 +90,7 @@ const Blog = () => {
       </section>
 
       {/* Featured Post */}
-      {featuredPost && (
+  {featuredPost && !loading && (
         <section className="featured-section">
           <div className="featured-container">
             <div className="featured-card">
@@ -226,7 +151,9 @@ const Blog = () => {
       {/* Blog Posts Grid */}
       <section className="posts-section">
         <div className="posts-container">
-          {regularPosts.length > 0 ? (
+          {loading && <p className="text-center text-white">Loading posts...</p>}
+          {error && <p className="text-center text-red-400 text-sm">{error}</p>}
+          {!loading && !error && regularPosts.length > 0 ? (
             <div className="posts-grid">
               {regularPosts.map((post) => (
                 <article key={post.id} className="post-card">
@@ -253,7 +180,7 @@ const Blog = () => {
                 </article>
               ))}
             </div>
-          ) : (
+          ) : (!loading && !error && (
             <div className="no-posts">
               <div className="no-posts-icon">
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -263,7 +190,7 @@ const Blog = () => {
               <h3 className="no-posts-title">No posts found for this category</h3>
               <p className="no-posts-text">Try selecting a different category or check back later for new content.</p>
             </div>
-          )}
+          ))}
         </div>
       </section>
 

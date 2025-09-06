@@ -1,13 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createCheckoutSession, precheckUrl } from '../api';
 import './Checkout.css';
 
 export default function Checkout() {
   const [form, setForm] = useState({ url: '', email: '', name: '' });
+  const [lockedEmail, setLockedEmail] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
+
+  // On mount, attempt to read JWT and prefill email
+  useEffect(() => {
+    try {
+      const token = localStorage.getItem('authToken');
+      if(token){
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const userEmail = payload.email || payload.userEmail;
+        if(userEmail){
+          setForm(f => ({ ...f, email: userEmail }));
+          setLockedEmail(true);
+        }
+      }
+    } catch {/* ignore */}
+  }, []);
 
   const handleSubmit = async e => {
     e.preventDefault();
@@ -77,7 +93,10 @@ export default function Checkout() {
                   value={form.email}
                   onChange={handleChange} 
                   required 
+                  disabled={lockedEmail}
+                  title={lockedEmail? 'Using your account email' : 'Enter the email to receive the report'}
                 />
+                {lockedEmail && <small style={{color:'#bbb'}}>Using logged in account email</small>}
               </div>
               
               <button type="submit" className="btn btn-primary btn-large" disabled={loading}>
