@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 
 const Services = () => {
   const [selectedPackage, setSelectedPackage] = useState(null);
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   const packages = [
     {
@@ -99,11 +100,30 @@ const Services = () => {
   ];
 
   const handleBuyReport = () => {
-    window.location.href = '/checkout';
+    if (isRedirecting) return; // prevent double clicks
+    setIsRedirecting(true);
+    // Small timeout allows spinner to render before navigation
+    setTimeout(() => {
+      window.location.href = '/checkout';
+    }, 50);
+  };
+
+  // Handle card click: first package goes straight to checkout (no modal)
+  const handleCardClick = (pkg) => {
+  if (pkg.id === 1) return handleBuyReport();
+    setSelectedPackage(pkg);
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen relative">
+      {isRedirecting && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="text-center">
+            <div className="w-16 h-16 border-4 border-purple-400 border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
+            <p className="text-white text-lg font-medium">Preparing checkout...</p>
+          </div>
+        </div>
+      )}
       {/* Hero Section - FIXED: Added pt-32 for header spacing and increased height */}
       <section className="relative py-32 pt-32 bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-800 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-tl from-pink-600/20 via-transparent to-cyan-600/10"></div>
@@ -194,12 +214,12 @@ const Services = () => {
           
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {packages.map((pkg) => (
-              <div 
-                key={pkg.id} 
+              <div
+                key={pkg.id}
                 className={`relative bg-white rounded-3xl p-8 shadow-xl border-2 transition-all duration-300 hover:shadow-2xl hover:scale-105 cursor-pointer ${
                   pkg.popular ? 'border-purple-300 transform scale-105' : 'border-gray-200'
                 }`}
-                onClick={() => setSelectedPackage(pkg)}
+                onClick={() => handleCardClick(pkg)}
               >
                 {pkg.popular && (
                   <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
@@ -244,14 +264,14 @@ const Services = () => {
                   </div>
                   
                   {pkg.name === 'AI GEO Visibility Report' ? (
-                    <button 
+                    <button
                       className={`w-full py-3 px-6 bg-gradient-to-r ${pkg.gradient} text-white font-semibold rounded-xl hover:shadow-lg transform hover:scale-105 transition-all duration-300`}
-                      onClick={handleBuyReport}
+                      onClick={(e) => { e.stopPropagation(); handleBuyReport(); }}
                     >
                       Purchase & Get Report
                     </button>
                   ) : (
-                    <button 
+                    <button
                       className={`w-full py-3 px-6 bg-gradient-to-r ${pkg.gradient} text-white font-semibold rounded-xl hover:shadow-lg transform hover:scale-105 transition-all duration-300`}
                     >
                       {pkg.cta}
@@ -312,7 +332,7 @@ const Services = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
               { title: "Start with Free Scan", desc: "Just curious about AI visibility? Get instant insights in 30 seconds.", cta: "Try Free Scan", link: "/" },
-              { title: "Get the Report", desc: "Want detailed analysis and a clear roadmap? Perfect for DIY implementation.", cta: "Get Report", action: () => setSelectedPackage(packages[0]) },
+              { title: "Get the Report", desc: "Want detailed analysis and a clear roadmap? Perfect for DIY implementation.", cta: "Get Report", action: () => handleBuyReport() },
               { title: "Full Optimization", desc: "Ready for us to handle everything? We'll implement all improvements.", cta: "Start Optimization", action: () => setSelectedPackage(packages[1]) },
               { title: "Ongoing Partnership", desc: "Need continuous support? Get a dedicated AI strategist.", cta: "Contact Sales", action: () => setSelectedPackage(packages[2]) }
             ].map((item, index) => (

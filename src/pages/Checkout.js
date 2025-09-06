@@ -80,17 +80,6 @@ export default function Checkout() {
                 />
               </div>
               
-              <div className="form-group">
-                <label>Business Name</label>
-                <input 
-                  name="name" 
-                  placeholder="Your Business Name" 
-                  value={form.name}
-                  onChange={handleChange} 
-                  required 
-                />
-              </div>
-
               <button type="submit" className="btn btn-primary btn-large" disabled={loading}>
                 {loading ? (
                   <>
