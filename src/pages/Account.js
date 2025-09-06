@@ -7,6 +7,9 @@ export default function Account() {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const pollRef = useRef(null);
 
   function formatTime(ts){
@@ -54,14 +57,17 @@ export default function Account() {
     }
   }
 
-  async function loadPersisted(token){
+  async function loadPersisted(token, pageToLoad = 1){
     try {
-      const res = await fetch(`${API_BASE}/my-analyses`, { headers: { Authorization: 'Bearer '+token } });
+      const res = await fetch(`${API_BASE}/my-analyses?page=${pageToLoad}&pageSize=20`, { headers: { Authorization: 'Bearer '+token } });
       const data = await res.json();
       if(data.success){
+        setHasMore(data.hasMore);
+        setPage(data.page);
         setJobs(prev => {
+          const base = pageToLoad === 1 ? [] : prev; // reset list if first page
           const map = new Map();
-          [...data.analyses, ...prev].forEach(t => { map.set(t.taskId || t._id, { ...t, taskId: t.taskId || t._id }); });
+          [...base, ...data.analyses].forEach(t => { map.set(t.taskId || t._id, { ...t, taskId: t.taskId || t._id }); });
           return Array.from(map.values()).sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
         });
       }
@@ -80,7 +86,7 @@ export default function Account() {
           setUser(data.user);
         }
         if(!ignore && data?.user?.email){
-          await loadPersisted(token);
+          await loadPersisted(token, 1);
           await loadStatuses(data.user.email);
           // start polling every 12s
           pollRef.current = setInterval(()=>loadStatuses(data.user.email), 12000);
@@ -89,6 +95,18 @@ export default function Account() {
     })();
     return ()=>{ignore=true; if(pollRef.current) clearInterval(pollRef.current);};
   }, []);
+
+  async function loadMore(){
+    if(loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    try {
+      const token = localStorage.getItem('authToken');
+      if(!token) return;
+      await loadPersisted(token, page + 1);
+    } finally {
+      setLoadingMore(false);
+    }
+  }
 
   function logout(){
     localStorage.removeItem('authToken');
@@ -135,6 +153,13 @@ export default function Account() {
                   </li>
                 ))}
               </ul>
+              {hasMore && (
+                <div className="mt-4 flex justify-center">
+                  <button onClick={loadMore} disabled={loadingMore} className="px-4 py-2 rounded bg-white/10 hover:bg-white/20 text-xs disabled:opacity-50">
+                    {loadingMore ? 'Loading...' : 'Load More'}
+                  </button>
+                </div>
+              )}
             </div>
             <div className="pt-6 flex gap-4">
               <button onClick={logout} className="px-5 py-2 rounded-lg bg-gradient-to-r from-pink-600 via-purple-600 to-blue-600 text-white text-sm font-semibold">Logout</button>
