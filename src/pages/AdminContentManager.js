@@ -48,6 +48,20 @@ export default function AdminContentManager(){
   const [analysisQuery,setAnalysisQuery]=useState('');
   const [analysisStatusFilter,setAnalysisStatusFilter]=useState('all');
   const headers = useAuthHeader();
+  // Runtime error banner ref (must be before any early returns for hook order)
+  const runtimeErrorRef = useRef(null);
+  useEffect(()=>{
+    function handler(e){
+      const msg = (e?.message||'').toLowerCase();
+      if(msg.includes('unexpected token') && msg.includes('<')){
+        if(runtimeErrorRef.current){
+          runtimeErrorRef.current.textContent = 'A network/proxy returned HTML instead of JSON. Some admin data may not load. Check auth token / CORS.';
+        }
+      }
+    }
+    window.addEventListener('error', handler);
+    return ()=> window.removeEventListener('error', handler);
+  },[]);
 
   // Safe JSON helper: gracefully handles HTML/error responses
   async function safeJson(res){
@@ -314,19 +328,6 @@ export default function AdminContentManager(){
       </li>
     );
   };
-
-  // Global runtime error listener (e.g., Unexpected token '<') -> show inline banner
-  const runtimeErrorRef = useRef(null);
-  useEffect(()=>{
-    function handler(e){
-      const msg = (e?.message||'').toLowerCase();
-      if(msg.includes('unexpected token') && msg.includes("<'".slice(0,1))){
-        runtimeErrorRef.current && (runtimeErrorRef.current.textContent = 'A network/proxy returned HTML instead of JSON. Some admin data may not load. Check auth token / CORS.');
-      }
-    }
-    window.addEventListener('error', handler);
-    return ()=> window.removeEventListener('error', handler);
-  },[]);
 
   return (
     <AdminErrorBoundary>
