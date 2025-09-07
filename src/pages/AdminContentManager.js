@@ -9,7 +9,9 @@ function useAuthHeader(){
 export default function AdminContentManager(){
   const [posts,setPosts]=useState([]);
   const [faqs,setFaqs]=useState([]);
-  const [loading,setLoading]=useState(true);
+  const [loading,setLoading]=useState(true); // overall initial load state (first paint)
+  const [postsLoading,setPostsLoading]=useState(true);
+  const [faqsLoading,setFaqsLoading]=useState(true);
   const [error,setError]=useState(null);
   const [editingPost,setEditingPost]=useState(null); // holds the post being edited/created
   const [editingFaq,setEditingFaq]=useState(null);
@@ -35,15 +37,49 @@ export default function AdminContentManager(){
   const [analysisStatusFilter,setAnalysisStatusFilter]=useState('all');
   const headers = useAuthHeader();
 
-  async function loadAll(){
+  // Safe JSON helper: gracefully handles HTML/error responses
+  async function safeJson(res){
+    const ct = res.headers.get('content-type')||'';
+    let text;
+    try { text = await res.text(); } catch { return { ok:false, error:'Network read error' }; }
+    if(!ct.includes('application/json')){
+      // Likely an HTML error / proxy page
+      if(text.trim().startsWith('<')){
+        return { ok:false, error:`Non-JSON response (${res.status})` };
+      }
+    }
+    try { return { ok:true, data: JSON.parse(text) }; } catch(e){ return { ok:false, error: e.message }; }
+  }
+
+  async function loadPosts(){
+    setPostsLoading(true);
     try {
-      const [pRes,fRes] = await Promise.all([
-        fetch(`${API_BASE}/admin/blogs`).then(r=>r.json()),
-        fetch(`${API_BASE}/admin/faqs`).then(r=>r.json())
-      ]);
-      if(pRes.success) setPosts(pRes.posts); else throw new Error(pRes.error||'Blog fetch failed');
-      if(fRes.success) setFaqs(fRes.faqs); else throw new Error(fRes.error||'FAQ fetch failed');
-    } catch(e){ setError(e.message);} finally { setLoading(false);} }
+      const res = await fetch(`${API_BASE}/admin/blogs`, { headers });
+      const parsed = await safeJson(res);
+      if(parsed.ok && parsed.data.success){ setPosts(parsed.data.posts); }
+      else if(parsed.ok) { throw new Error(parsed.data.error||'Blog fetch failed'); }
+      else { throw new Error(parsed.error); }
+    } catch(e){ setError(prev=> prev||e.message); }
+    finally { setPostsLoading(false); setLoading(false); }
+  }
+
+  async function loadFaqs(){
+    setFaqsLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/admin/faqs`, { headers });
+      const parsed = await safeJson(res);
+      if(parsed.ok && parsed.data.success){ setFaqs(parsed.data.faqs); }
+      else if(parsed.ok) { throw new Error(parsed.data.error||'FAQ fetch failed'); }
+      else { throw new Error(parsed.error); }
+    } catch(e){ setError(prev=> prev||e.message); }
+    finally { setFaqsLoading(false); setLoading(false); }
+  }
+
+  async function loadAll(){
+    // Kick off independently for progressive render
+    loadPosts();
+    loadFaqs();
+  }
 
   async function loadMessages(page=1, q=''){
     try {
@@ -127,8 +163,9 @@ export default function AdminContentManager(){
     filteredMessages = filteredMessages.filter(m=> m.status === messageStatusFilter);
   }
 
-  if(loading) return <div className='pt-32 text-center text-white'>Loading...</div>;
-  if(error) return <div className='pt-32 text-center text-red-400'>{error}</div>;
+  if(error && posts.length===0 && faqs.length===0 && view!=='analysis' && view!=='messages'){
+    return <div className='pt-32 text-center text-red-400'>{error}</div>;
+  }
 
   // --- Reusable inline edit form components ---
   const PostEditForm = ({value,onChange,onCancel,onSubmit}) => (
@@ -287,7 +324,7 @@ export default function AdminContentManager(){
           </div>
         </div>
 
-        {view==='analysis' && (
+  {view==='analysis' && (
           <section className='relative mb-14 -mt-4'>
             <header className='flex flex-col gap-4 mb-4 md:flex-row md:items-center md:justify-between'>
               <h2 className='text-xl font-semibold flex items-center gap-3'>
@@ -333,7 +370,7 @@ export default function AdminContentManager(){
                             const res = await fetch(`${API_BASE}/admin/analysis/${rec._id}/rerun`, { method:'POST', headers });
                             const data = await res.json();
                             if(!res.ok) { alert(data.error||'Failed to re-queue'); return; }
-                            alert('Re-run queued (task '+data.newTaskId+')');
+                            alert('Re-run queued (task '+(data.taskId||data.newTaskId||rec.taskId)+')');
                             loadAnalysis(1, analysisQuery, analysisStatusFilter);
                           } catch(e){ alert('Network error'); }
                         }} className='px-3 py-1.5 rounded bg-purple-600/70 hover:bg-purple-500 text-[11px] font-semibold'>Re-run</button>
@@ -441,7 +478,7 @@ export default function AdminContentManager(){
         {view!=='messages' && (
           <></>
         )}
-        {view==='posts' && (
+  {view==='posts' && (
           <section className='relative mb-14'>
             <header className='flex flex-col gap-4 mb-4 md:flex-row md:items-center md:justify-between'>
               <h2 className='text-xl font-semibold flex items-center gap-3'>
@@ -472,10 +509,21 @@ export default function AdminContentManager(){
               </div>
             )}
             {showPosts && (
-              <ul className='space-y-4 max-h-[36rem] overflow-y-auto pr-1 custom-scrollbar'>
-                {filteredPosts.map(p=> <PostRow key={p._id} post={p} />)}
-                {filteredPosts.length===0 && <li className='text-sm text-gray-400 italic'>No posts match.</li>}
-              </ul>
+              <>
+                {postsLoading && posts.length===0 && (
+                  <div className='space-y-3 animate-pulse'>
+                    <div className='h-16 rounded-xl bg-white/5'></div>
+                    <div className='h-16 rounded-xl bg-white/5'></div>
+                    <div className='h-16 rounded-xl bg-white/5'></div>
+                  </div>
+                )}
+                {!postsLoading && (
+                  <ul className='space-y-4 max-h-[36rem] overflow-y-auto pr-1 custom-scrollbar'>
+                    {filteredPosts.map(p=> <PostRow key={p._id} post={p} />)}
+                    {filteredPosts.length===0 && <li className='text-sm text-gray-400 italic'>No posts match.</li>}
+                  </ul>
+                )}
+              </>
             )}
           </section>
         )}
@@ -510,10 +558,21 @@ export default function AdminContentManager(){
               </div>
             )}
             {showFaqs && (
-              <ul className='space-y-4 max-h-[36rem] overflow-y-auto pr-1 custom-scrollbar'>
-                {filteredFaqs.map(f=> <FaqRow key={f._id} faq={f} />)}
-                {filteredFaqs.length===0 && <li className='text-sm text-gray-400 italic'>No FAQs match.</li>}
-              </ul>
+              <>
+                {faqsLoading && faqs.length===0 && (
+                  <div className='space-y-3 animate-pulse'>
+                    <div className='h-14 rounded-xl bg-white/5'></div>
+                    <div className='h-14 rounded-xl bg-white/5'></div>
+                    <div className='h-14 rounded-xl bg-white/5'></div>
+                  </div>
+                )}
+                {!faqsLoading && (
+                  <ul className='space-y-4 max-h-[36rem] overflow-y-auto pr-1 custom-scrollbar'>
+                    {filteredFaqs.map(f=> <FaqRow key={f._id} faq={f} />)}
+                    {filteredFaqs.length===0 && <li className='text-sm text-gray-400 italic'>No FAQs match.</li>}
+                  </ul>
+                )}
+              </>
             )}
           </section>
         )}
