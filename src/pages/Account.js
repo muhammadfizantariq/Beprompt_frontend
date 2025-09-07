@@ -40,22 +40,7 @@ export default function Account() {
     return <span className={`text-[10px] px-2 py-0.5 rounded ${cls}`}>email: {status}</span>;
   }
 
-  async function loadStatuses(email){
-    try {
-      const res = await fetch(`${API_BASE}/analysis-status?email=${encodeURIComponent(email)}`);
-      const data = await res.json();
-      if(data.success){
-        setJobs(prev => {
-          // Merge with previous by taskId to preserve any extra fields
-            const map = new Map();
-            [...data.tasks, ...prev].forEach(t => { map.set(t.taskId, { ...map.get(t.taskId), ...t }); });
-            return Array.from(map.values()).sort((a,b)=>b.createdAt - a.createdAt);
-        });
-      }
-    } catch(e){
-      console.warn('Status load failed', e.message);
-    }
-  }
+  // Removed loadStatuses – now relying purely on DB persistence (/my-analyses)
 
   async function loadPersisted(token, pageToLoad = 1){
     try {
@@ -87,9 +72,8 @@ export default function Account() {
         }
         if(!ignore && data?.user?.email){
           await loadPersisted(token, 1);
-          await loadStatuses(data.user.email);
-          // start polling every 12s
-          pollRef.current = setInterval(()=>loadStatuses(data.user.email), 12000);
+          // Poll DB every 15s for updated statuses (DB is source of truth)
+          pollRef.current = setInterval(()=> loadPersisted(token, 1), 15000);
         }
       } catch(e){ if(!ignore) setError(e.message); } finally { if(!ignore) setLoading(false); }
     })();
