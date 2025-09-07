@@ -167,7 +167,15 @@ export default function AdminContentManager(){
     setEditingPost({ _id: undefined, title:'', excerpt:'', content:'', category:'', author:'', readTime:'5 min', featured:false, published:true });
   }
 
-  async function deletePost(id){ if(!window.confirm('Delete post?')) return; const res = await fetch(`${API_BASE}/admin/blogs/${id}`, { method:'DELETE', headers }); const data=await res.json(); if(!data.success){ alert(data.error); return;} setPosts(p=>p.filter(x=>x._id!==id)); }
+  async function deletePost(id){
+    if(!window.confirm('Delete post?')) return;
+    try {
+      const res = await fetch(`${API_BASE}/admin/blogs/${id}`, { method:'DELETE', headers });
+      const parsed = await safeJson(res);
+      if(!(parsed.ok && parsed.data.success)) { alert(parsed.ok? (parsed.data.error||'Delete failed') : parsed.error); return; }
+      setPosts(p=>p.filter(x=>x._id!==id));
+    } catch(e){ alert('Network error'); }
+  }
 
   async function saveFaq(e){
     e.preventDefault();
@@ -183,7 +191,15 @@ export default function AdminContentManager(){
     if(editingFaq && !editingFaq._id) return;
     setEditingFaq({ _id: undefined, question:'', answer:'', category:'', order:0, published:true });
   }
-  async function deleteFaq(id){ if(!window.confirm('Delete FAQ?')) return; const res=await fetch(`${API_BASE}/admin/faqs/${id}`,{ method:'DELETE', headers }); const data=await res.json(); if(!data.success){ alert(data.error); return;} setFaqs(f=>f.filter(x=>x._id!==id)); }
+  async function deleteFaq(id){
+    if(!window.confirm('Delete FAQ?')) return;
+    try {
+      const res=await fetch(`${API_BASE}/admin/faqs/${id}`,{ method:'DELETE', headers });
+      const parsed = await safeJson(res);
+      if(!(parsed.ok && parsed.data.success)) { alert(parsed.ok? (parsed.data.error||'Delete failed') : parsed.error); return; }
+      setFaqs(f=>f.filter(x=>x._id!==id));
+    } catch(e){ alert('Network error'); }
+  }
 
   // --- Filtering (no useMemo to avoid hook ordering issues with early returns) ---
   const filteredPosts = posts.filter(p=> p.title.toLowerCase().includes(postQuery.toLowerCase()));
@@ -404,9 +420,9 @@ export default function AdminContentManager(){
                           if(!window.confirm('Re-run this analysis now?')) return;
                           try {
                             const res = await fetch(`${API_BASE}/admin/analysis/${rec._id}/rerun`, { method:'POST', headers });
-                            const data = await res.json();
-                            if(!res.ok) { alert(data.error||'Failed to re-queue'); return; }
-                            alert('Re-run queued (task '+(data.taskId||data.newTaskId||rec.taskId)+')');
+                            const parsed = await safeJson(res);
+                            if(!(parsed.ok && parsed.data.success)) { alert(parsed.ok? (parsed.data.error||'Failed to re-queue') : parsed.error); return; }
+                            alert('Re-run queued (task '+(parsed.data.taskId||parsed.data.newTaskId||rec.taskId)+')');
                             loadAnalysis(1, analysisQuery, analysisStatusFilter);
                           } catch(e){ alert('Network error'); }
                         }} className='px-3 py-1.5 rounded bg-purple-600/70 hover:bg-purple-500 text-[11px] font-semibold'>Re-run</button>
