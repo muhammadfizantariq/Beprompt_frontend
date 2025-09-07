@@ -1,9 +1,21 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { API_BASE } from '../config/apiBase';
 
 function useAuthHeader(){
   const token = typeof window!=='undefined'?localStorage.getItem('authToken'):null;
   return token? { Authorization: 'Bearer '+token, 'Content-Type':'application/json' } : { 'Content-Type':'application/json' };
+}
+
+class AdminErrorBoundary extends React.Component {
+  constructor(props){ super(props); this.state={ hasError:false, error:null }; }
+  static getDerivedStateFromError(error){ return { hasError:true, error }; }
+  componentDidCatch(error, info){ console.error('AdminContentManager crashed:', error, info); }
+  render(){
+    if(this.state.hasError){
+      return <div className='pt-32 px-6 text-center text-red-400'>Admin panel error: {this.state.error?.message||'Unknown error'}<div className='mt-4'><button onClick={()=>window.location.reload()} className='px-4 py-2 bg-white/10 rounded hover:bg-white/20'>Reload</button></div></div>;
+    }
+    return this.props.children;
+  }
 }
 
 export default function AdminContentManager(){
@@ -86,11 +98,13 @@ export default function AdminContentManager(){
       const params = new URLSearchParams({ page: String(page), limit: String(pageSize) });
       if(q) params.append('q', q);
       const res = await fetch(`${API_BASE}/admin/contact-messages?`+params.toString(), { headers });
-      const data = await res.json();
-      if(data.success){
-        setMessages(data.items);
-        setMessagesTotal(data.total);
-        setMessagesPage(data.page);
+      const parsed = await safeJson(res);
+      if(parsed.ok && parsed.data.success){
+        setMessages(parsed.data.items);
+        setMessagesTotal(parsed.data.total);
+        setMessagesPage(parsed.data.page);
+      } else if(!parsed.ok) {
+        console.warn('Messages load non-JSON:', parsed.error);
       }
     } catch(e){ console.warn('Failed loading messages', e.message); }
   }
@@ -113,9 +127,15 @@ export default function AdminContentManager(){
       if(q) params.append('q', q);
       if(status!=='all') params.append('status', status);
       const res = await fetch(`${API_BASE}/admin/analysis-records?`+params.toString(), { headers });
-      const data = await res.json();
-      if(data.success){ setAnalysisRecords(data.items); setAnalysisTotal(data.total); setAnalysisPage(data.page);} }
-    catch(e){ console.warn('Failed load analysis', e.message); }
+      const parsed = await safeJson(res);
+      if(parsed.ok && parsed.data.success){
+        setAnalysisRecords(parsed.data.items);
+        setAnalysisTotal(parsed.data.total);
+        setAnalysisPage(parsed.data.page);
+      } else if(!parsed.ok) {
+        console.warn('Analysis load non-JSON:', parsed.error);
+      }
+    } catch(e){ console.warn('Failed load analysis', e.message); }
   }
 
   async function savePost(e){
@@ -123,9 +143,9 @@ export default function AdminContentManager(){
     const method = editingPost? 'PUT':'POST';
     const url = editingPost? `${API_BASE}/admin/blogs/${editingPost._id}` : `${API_BASE}/admin/blogs`;
     const body = JSON.stringify(editingPost||{});
-    const res = await fetch(url,{ method, headers, body });
-    const data = await res.json();
-    if(!data.success){ alert(data.error||'Failed'); return; }
+  const res = await fetch(url,{ method, headers, body });
+  const parsed = await safeJson(res);
+  if(!(parsed.ok && parsed.data.success)){ alert(parsed.ok? (parsed.data.error||'Failed') : parsed.error); return; }
     setEditingPost(null); setLoading(true); await loadAll();
   }
   function newPost(){
@@ -140,9 +160,9 @@ export default function AdminContentManager(){
     const method = editingFaq? 'PUT':'POST';
     const url = editingFaq? `${API_BASE}/admin/faqs/${editingFaq._id}` : `${API_BASE}/admin/faqs`;
     const body = JSON.stringify(editingFaq||{});
-    const res = await fetch(url,{ method, headers, body });
-    const data = await res.json();
-    if(!data.success){ alert(data.error||'Failed'); return; }
+  const res = await fetch(url,{ method, headers, body });
+  const parsed = await safeJson(res);
+  if(!(parsed.ok && parsed.data.success)){ alert(parsed.ok? (parsed.data.error||'Failed') : parsed.error); return; }
     setEditingFaq(null); setLoading(true); await loadAll();
   }
   function newFaq(){
@@ -295,9 +315,24 @@ export default function AdminContentManager(){
     );
   };
 
+  // Global runtime error listener (e.g., Unexpected token '<') -> show inline banner
+  const runtimeErrorRef = useRef(null);
+  useEffect(()=>{
+    function handler(e){
+      const msg = (e?.message||'').toLowerCase();
+      if(msg.includes('unexpected token') && msg.includes("<'".slice(0,1))){
+        runtimeErrorRef.current && (runtimeErrorRef.current.textContent = 'A network/proxy returned HTML instead of JSON. Some admin data may not load. Check auth token / CORS.');
+      }
+    }
+    window.addEventListener('error', handler);
+    return ()=> window.removeEventListener('error', handler);
+  },[]);
+
   return (
+    <AdminErrorBoundary>
     <div className='min-h-screen pt-28 pb-20 px-4 md:px-10 bg-gradient-to-br from-gray-950 via-purple-950 to-blue-950 text-white'>
       <div className='max-w-7xl mx-auto'>
+        <div ref={runtimeErrorRef} className='text-xs text-amber-300 mb-4'></div>
         <div className='flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-10'>
           <div>
             <h1 className='text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-pink-400 via-purple-300 to-cyan-300 text-transparent bg-clip-text'>Content Administration</h1>
@@ -578,5 +613,6 @@ export default function AdminContentManager(){
         )}
       </div>
     </div>
+    </AdminErrorBoundary>
   );
 }
