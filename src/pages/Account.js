@@ -108,8 +108,8 @@ export default function Account() {
             <div>
               <p className="text-sm uppercase tracking-wide text-purple-200">Email</p>
               <p className="text-lg font-semibold">{user.email}</p>
-              <p className="text-xs mt-1">Status: {user.verified ? <span className="text-green-400">Verified</span> : <span className="text-yellow-300">Unverified</span>}</p>
-              {!user.verified && <Link to="/resend-verification" className="text-xs text-purple-300 underline">Resend verification</Link>}
+              <p className="text-xs mt-1 flex items-center gap-2">Status: {user.verified ? <span className="text-green-400">Verified</span> : <><span className="text-yellow-300">Unverified</span><button onClick={()=> window.location.href='/resend-verification'} className="px-2 py-0.5 text-[10px] rounded bg-purple-600/60 hover:bg-purple-600 text-white">Verify Now</button></>}</p>
+              {!user.verified && <p className="text-[10px] text-purple-200 mt-1">Please verify to enable full analysis history & email delivery reliability.</p>}
             </div>
             <div className="pt-4">
               <h2 className="text-xl font-semibold mb-2">Recent Analyses</h2>

@@ -154,7 +154,7 @@ const Header = () => {
             )}
           </nav>
 
-          {/* Header CTA */}
+          {/* Header CTA (Desktop) */}
           <div className="hidden lg:flex items-center gap-4">
             {authed ? (
               <>
@@ -176,24 +176,41 @@ const Header = () => {
             )}
           </div>
 
-          {/* Mobile Menu Button */}
-          <button 
-            className="lg:hidden p-2 rounded-lg transition-colors duration-300"
-            onClick={toggleMobileMenu}
-            aria-label="Toggle mobile menu"
-          >
-            <div className="w-6 h-6 flex flex-col justify-center space-y-1">
-              <div className={`w-full h-0.5 transition-all duration-300 ${
-                isScrolled ? 'bg-gray-700' : 'bg-white'
-              } ${isMobileMenuOpen ? 'rotate-45 translate-y-1.5' : ''}`}></div>
-              <div className={`w-full h-0.5 transition-all duration-300 ${
-                isScrolled ? 'bg-gray-700' : 'bg-white'
-              } ${isMobileMenuOpen ? 'opacity-0' : ''}`}></div>
-              <div className={`w-full h-0.5 transition-all duration-300 ${
-                isScrolled ? 'bg-gray-700' : 'bg-white'
-              } ${isMobileMenuOpen ? '-rotate-45 -translate-y-1.5' : ''}`}></div>
-            </div>
-          </button>
+          {/* Mobile quick auth actions */}
+          <div className="flex lg:hidden items-center gap-2">
+            {authed ? (
+              !isAdmin && <Link to="/account" className={`px-3 py-1.5 rounded-md text-xs font-medium ${isScrolled ? 'bg-purple-600 text-white' : 'bg-white/20 text-white'} transition`}>
+                Acct
+              </Link>
+            ) : (
+              <Link to="/login" className={`px-3 py-1.5 rounded-md text-xs font-medium ${isScrolled ? 'bg-purple-600 text-white' : 'bg-white/20 text-white'} transition`}>
+                Login
+              </Link>
+            )}
+            {authed && (
+              <button onClick={logout} className="px-3 py-1.5 rounded-md text-xs font-medium bg-gradient-to-r from-pink-600 via-purple-600 to-blue-600 text-white">
+                Out
+              </button>
+            )}
+            {/* Mobile Menu Button */}
+            <button 
+              className="p-2 rounded-lg transition-colors duration-300"
+              onClick={toggleMobileMenu}
+              aria-label="Toggle mobile menu"
+            >
+              <div className="w-6 h-6 flex flex-col justify-center space-y-1">
+                <div className={`w-full h-0.5 transition-all duration-300 ${
+                  isScrolled ? 'bg-gray-700' : 'bg-white'
+                } ${isMobileMenuOpen ? 'rotate-45 translate-y-1.5' : ''}`}></div>
+                <div className={`w-full h-0.5 transition-all duration-300 ${
+                  isScrolled ? 'bg-gray-700' : 'bg-white'
+                } ${isMobileMenuOpen ? 'opacity-0' : ''}`}></div>
+                <div className={`w-full h-0.5 transition-all duration-300 ${
+                  isScrolled ? 'bg-gray-700' : 'bg-white'
+                } ${isMobileMenuOpen ? '-rotate-45 -translate-y-1.5' : ''}`}></div>
+              </div>
+            </button>
+          </div>
         </div>
 
         {/* Mobile Navigation */}

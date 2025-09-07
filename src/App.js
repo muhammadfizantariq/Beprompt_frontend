@@ -23,6 +23,20 @@ import AdminDashboard from './pages/AdminDashboard';
 import AdminContentManager from './pages/AdminContentManager';
 import './App.css';
 
+// Track last non-auth route for post-login redirection
+import { useEffect } from 'react';
+
+function RouteTracker() {
+  const location = useLocation();
+  useEffect(() => {
+    const authPaths = new Set(['/login','/signup','/verify-email','/resend-verification','/forgot-password','/reset-password']);
+    if(!authPaths.has(location.pathname)) {
+      try { localStorage.setItem('lastRoute', location.pathname + location.search); } catch {}
+    }
+  }, [location]);
+  return null;
+}
+
 function ProtectedRoute({ children }) {
   const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
   const location = useLocation();
@@ -48,6 +62,7 @@ function App() {
     <Router>
       <div className="App">
         <ScrollToTop />
+  <RouteTracker />
         <Header />
         <main>
           <Routes>

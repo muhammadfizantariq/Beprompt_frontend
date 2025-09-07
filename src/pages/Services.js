@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 const Services = () => {
   const [selectedPackage, setSelectedPackage] = useState(null);
   const [isRedirecting, setIsRedirecting] = useState(false);
+  const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
 
   const packages = [
     {
@@ -99,23 +100,22 @@ const Services = () => {
     { feature: "Custom Solutions", free: "✗", report: "✗", optimization: "✗", premium: "✓" }
   ];
 
-  const handleBuyReport = () => {
+  const proceedToCheckout = () => {
     if (isRedirecting) return;
-    const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
     setIsRedirecting(true);
     setTimeout(() => {
       if (token) {
         window.location.href = '/checkout';
       } else {
-        window.location.href = '/login';
+  // Pass intent so login page redirects back to checkout after auth
+  window.location.href = '/login?from=checkout';
       }
     }, 50);
   };
 
   // Handle card click: first package goes straight to checkout (no modal)
   const handleCardClick = (pkg) => {
-  if (pkg.id === 1) return handleBuyReport();
-    setSelectedPackage(pkg);
+    setSelectedPackage(pkg); // Always open modal for explicit confirmation
   };
 
   return (
@@ -267,20 +267,12 @@ const Services = () => {
                     <span className="text-gray-600 ml-1">{pkg.bestFor}</span>
                   </div>
                   
-                  {pkg.name === 'AI GEO Visibility Report' ? (
-                    <button
-                      className={`w-full py-3 px-6 bg-gradient-to-r ${pkg.gradient} text-white font-semibold rounded-xl hover:shadow-lg transform hover:scale-105 transition-all duration-300`}
-                      onClick={(e) => { e.stopPropagation(); handleBuyReport(); }}
-                    >
-                      Purchase & Get Report
-                    </button>
-                  ) : (
-                    <button
-                      className={`w-full py-3 px-6 bg-gradient-to-r ${pkg.gradient} text-white font-semibold rounded-xl hover:shadow-lg transform hover:scale-105 transition-all duration-300`}
-                    >
-                      {pkg.cta}
-                    </button>
-                  )}
+                  <button
+                    className={`w-full py-3 px-6 bg-gradient-to-r ${pkg.gradient} text-white font-semibold rounded-xl hover:shadow-lg transform hover:scale-105 transition-all duration-300`}
+                    onClick={(e)=> { e.stopPropagation(); setSelectedPackage(pkg); }}
+                  >
+                    {pkg.id === 1 ? 'View & Purchase Report' : pkg.cta}
+                  </button>
                 </div>
               </div>
             ))}
@@ -336,7 +328,7 @@ const Services = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
               { title: "Start with Free Scan", desc: "Just curious about AI visibility? Get instant insights in 30 seconds.", cta: "Try Free Scan", link: "/" },
-              { title: "Get the Report", desc: "Want detailed analysis and a clear roadmap? Perfect for DIY implementation.", cta: "Get Report", action: () => handleBuyReport() },
+              { title: "Get the Report", desc: "Want detailed analysis and a clear roadmap? Perfect for DIY implementation.", cta: "Get Report", action: () => setSelectedPackage(packages[0]) },
               { title: "Full Optimization", desc: "Ready for us to handle everything? We'll implement all improvements.", cta: "Start Optimization", action: () => setSelectedPackage(packages[1]) },
               { title: "Ongoing Partnership", desc: "Need continuous support? Get a dedicated AI strategist.", cta: "Contact Sales", action: () => setSelectedPackage(packages[2]) }
             ].map((item, index) => (
@@ -417,9 +409,12 @@ const Services = () => {
                 <div><strong className="text-gray-900">Delivery:</strong> <span className="text-gray-700">{selectedPackage.delivery}</span></div>
               </div>
               
-              <button className={`w-full py-3 px-6 bg-gradient-to-r ${selectedPackage.gradient} text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300`}>
-                {selectedPackage.cta}
-              </button>
+              <div className="space-y-3">
+                <button className={`w-full py-3 px-6 bg-gradient-to-r ${selectedPackage.gradient} text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300`} onClick={proceedToCheckout}>
+                  {selectedPackage.id === 1 ? 'Proceed to Checkout' : selectedPackage.cta}
+                </button>
+                <button className="w-full py-3 px-6 bg-gray-100 text-gray-700 font-medium rounded-xl hover:bg-gray-200 transition" onClick={()=> setSelectedPackage(null)}>Cancel</button>
+              </div>
             </div>
           </div>
         </div>

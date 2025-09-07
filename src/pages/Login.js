@@ -6,12 +6,26 @@ import { API_BASE, fetchJSON } from '../config/apiBase';
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
-  const redirectTo = location.state?.from || '/checkout';
+  // Determine where to go after successful login:
+  // 1. If a protected route stored an origin in location.state.from, use it.
+  // 2. Else if query string explicitly asks for checkout (?from=checkout), go there.
+  // 3. Otherwise go to home page.
+  const urlParams = new URLSearchParams(location.search);
+  let redirectTo = location.state?.from;
+  if(!redirectTo) {
+    if (urlParams.get('from') === 'checkout') redirectTo = '/checkout';
+    else {
+      const stored = typeof window !== 'undefined' ? localStorage.getItem('lastRoute') : null;
+      redirectTo = stored && !['/login','/signup','/verify-email','/resend-verification','/forgot-password','/reset-password'].includes(stored) ? stored : '/';
+    }
+  }
   // Auto-admin redirect handled after token decode; no manual admin mode toggle.
 
   const [form, setForm] = useState({ email: '', password: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [unverifiedEmail, setUnverifiedEmail] = useState(null);
+  const [resendStatus, setResendStatus] = useState({ sending:false, message:null, error:null });
   const [googleReady, setGoogleReady] = useState(false);
   const googleDivRef = useRef(null);
   const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID;
@@ -82,7 +96,11 @@ export default function Login() {
     }
     setLoading(true);
     try {
-      const { ok, data } = await fetchJSON('/auth/login', { method: 'POST', body: JSON.stringify(form) });
+      const { ok, data, status } = await fetchJSON('/auth/login', { method: 'POST', body: JSON.stringify(form) });
+      if (status === 403 && (data?.error || '').toLowerCase().includes('not verified')) {
+        setUnverifiedEmail(form.email);
+        throw new Error('Email not verified');
+      }
       if (!ok || !data.token) throw new Error(data?.error || 'Login failed');
       localStorage.setItem('authToken', data.token);
   try { const payload = JSON.parse(atob(data.token.split('.')[1])); if(payload.role==='admin'){ navigate('/admin', { replace: true }); return; } } catch {}
@@ -126,6 +144,30 @@ export default function Login() {
             />
           </div>
           {error && <p className="text-sm text-red-400">{error}</p>}
+          {unverifiedEmail && (
+            <div className="text-xs bg-yellow-500/10 border border-yellow-400/30 text-yellow-200 rounded p-3 space-y-2">
+              <p>The email <span className="font-medium">{unverifiedEmail}</span> is not verified.</p>
+              <button
+                type="button"
+                disabled={resendStatus.sending}
+                onClick={async ()=>{
+                  setResendStatus({ sending:true, message:null, error:null });
+                  try {
+                    const r = await fetch(`${API_BASE}/auth/resend-verification`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email: unverifiedEmail })});
+                    const t = await r.text(); let d; try { d = t? JSON.parse(t):{}; } catch { d={}; }
+                    if(!r.ok) throw new Error(d.error || 'Failed to resend');
+                    setResendStatus({ sending:false, message:'Verification email sent. Check your inbox.', error:null });
+                  } catch(e){ setResendStatus({ sending:false, message:null, error:e.message }); }
+                }}
+                className="w-full py-2 rounded-md bg-gradient-to-r from-purple-500 to-blue-600 text-white text-xs font-semibold hover:from-purple-600 hover:to-blue-700 disabled:opacity-60"
+              >
+                {resendStatus.sending? 'Sending...' : 'Resend Verification Email'}
+              </button>
+              {resendStatus.message && <p className="text-green-300 text-[11px]">{resendStatus.message}</p>}
+              {resendStatus.error && <p className="text-red-300 text-[11px]">{resendStatus.error}</p>}
+              <p className="text-[10px] text-gray-300">Didn't get it? Check spam or wait a minute before trying again.</p>
+            </div>
+          )}
           <button
             type="submit"
             disabled={loading}

@@ -325,6 +325,20 @@ export default function AdminContentManager(){
                       </div>
                       {rec.emailError && <div className='mt-1 text-[11px] text-red-400'>Email Error: {rec.emailError}</div>}
                     </div>
+                    <div className='flex flex-col gap-2 shrink-0'>
+                      {rec.email && (
+                        <button onClick={async ()=>{
+                          if(!window.confirm('Re-run this analysis now?')) return;
+                          try {
+                            const res = await fetch(`${API_BASE}/admin/analysis/${rec._id}/rerun`, { method:'POST', headers });
+                            const data = await res.json();
+                            if(!res.ok) { alert(data.error||'Failed to re-queue'); return; }
+                            alert('Re-run queued (task '+data.newTaskId+')');
+                            loadAnalysis(1, analysisQuery, analysisStatusFilter);
+                          } catch(e){ alert('Network error'); }
+                        }} className='px-3 py-1.5 rounded bg-purple-600/70 hover:bg-purple-500 text-[11px] font-semibold'>Re-run</button>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}
